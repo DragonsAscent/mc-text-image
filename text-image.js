@@ -155,13 +155,15 @@ for (const el of [
 let doFullSelect = false;
 
 jsonOut.addEventListener('mousedown', e => {
-    doFullSelect = e.button === 0 && !e.altKey && document.activeElement !== jsonOut;
+    const textarea = e.target.closest('textarea');
+    doFullSelect = !!textarea && e.button === 0 && !e.altKey && document.activeElement !== textarea;
 });
 
 jsonOut.addEventListener('click', e => {
-    if (e.button === 0 && !e.altKey && doFullSelect) {
-        jsonOut.focus();
-        jsonOut.select();
+    const textarea = e.target.closest('textarea');
+    if (textarea && e.button === 0 && !e.altKey && doFullSelect) {
+        textarea.focus();
+        textarea.select();
     }
 });
 
@@ -269,19 +271,32 @@ function splitIntoChunks(text, maxLength = OUTPUT_CHUNK_SIZE) {
     return chunks.length ? chunks : [''];
 }
 
-function formatDisplayedTexts(texts) {
-    if (texts.length <= 1 || outputType.value === 'summon') {
-        return texts.join('\n');
-    }
+function calcOutputRows(text) {
+    const lineCount = text.split('\n').length;
+    return Math.min(12, Math.max(4, lineCount + 1));
+}
+
+function renderOutputChunks(texts) {
+    jsonOut.replaceChildren();
     
-    return texts.map((text, index) => {
-        const chunkNum = index + 1;
-        return [
-            `===== CHUNK ${chunkNum}/${texts.length} START =====`,
-            text,
-            `===== CHUNK ${chunkNum}/${texts.length} END =====`,
-        ].join('\n');
-    }).join('\n\n');
+    texts.forEach((text, index) => {
+        const chunkWrap = document.createElement('div');
+        chunkWrap.className = 'chunk-card';
+        
+        const chunkLabel = document.createElement('div');
+        chunkLabel.className = 'chunk-label';
+        chunkLabel.innerText = `Chunk ${index + 1}${texts.length > 1 ? ` of ${texts.length}` : ''}`;
+        
+        const textarea = document.createElement('textarea');
+        textarea.readOnly = true;
+        textarea.rows = calcOutputRows(text);
+        textarea.cols = 50;
+        textarea.spellcheck = false;
+        textarea.value = text;
+        
+        chunkWrap.append(chunkLabel, textarea);
+        jsonOut.append(chunkWrap);
+    });
 }
 
 function jsonToText(json) {
@@ -452,7 +467,7 @@ function updateOutput() {
     chatLimit.classList.toggle('yes', maxLength <= 255);
     cmdBlockLimit.classList.toggle('yes', maxLength <= 32500);
     
-    jsonOut.value = formatDisplayedTexts(texts);
+    renderOutputChunks(texts);
 }
 
 if (imageInput.files.length) {
