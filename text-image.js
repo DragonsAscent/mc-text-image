@@ -253,6 +253,17 @@ function makeMiniMessageString(json) {
     ).join('');
 }
 
+function makeJsonComponent(json) {
+    if (!json.length) {
+        return {text: ''};
+    }
+
+    return {
+        text: '',
+        extra: json,
+    };
+}
+
 function makeEscapedString(output) {
     return output.replace(/"/g, '\\"');
 }
@@ -344,7 +355,7 @@ function renderOutputChunks(texts) {
 
 function jsonToText(json) {
     const minimessageOutput = makeMiniMessageString(json);
-    const rawOutput = JSON.stringify(json);
+    const rawOutput = JSON.stringify(makeJsonComponent(json));
     
     if (outputType.value === 'minimessage') {
         return splitIntoChunks(minimessageOutput);
