@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, user-scalable=yes">
         <title>Minecraft Text Image Generator</title>
         <link rel="stylesheet" href="style.css?v=14">
-        <script defer src="text-image.js?v=12"></script>
+        <script defer src="text-image.js?v=13"></script>
     </head>
     <body class="no-transition">
         <div class="hero">
@@ -152,6 +152,7 @@
 
                 <div class="output info-above help-owner">
                     <span id="length-out"></span>
+                    <span id="color-token-out"></span>
                     <span class="nowrap">
                         (<span id="chat-limit" class="yes-no">chat</span>,
                         <span id="cmd-block-limit" class="yes-no">cmd block</span>,
@@ -161,6 +162,8 @@
                         Chat is limited to 256 characters, minus 1 for the slash.
                         <br>
                         Command blocks are limited to 32,500 characters.
+                        <br>
+                        Color token count is the number of color segments in the generated image output.
                         <br>
                         Functions have no character limit.
                     </div>

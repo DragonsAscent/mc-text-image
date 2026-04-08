@@ -13,6 +13,7 @@ const summonScale = document.getElementById('summon-scale');
 const fillGaps = document.getElementById('fill-gaps');
 
 const lengthOut = document.getElementById('length-out');
+const colorTokenOut = document.getElementById('color-token-out');
 const chatLimit = document.getElementById('chat-limit');
 const cmdBlockLimit = document.getElementById('cmd-block-limit');
 const jsonOut = document.getElementById('json-out');
@@ -512,12 +513,14 @@ function updateOutput() {
     ctx.putImageData(imageData, 0, 0);
     
     const texts = jsonToText(json);
+    const colorTokenCount = json.length;
     
     let maxLength = 0;
     for (const text of texts) {
         if (text.length > maxLength) maxLength = text.length;
     }
     const maxLengthText = maxLength.toLocaleString();
+    const colorTokenText = colorTokenCount.toLocaleString();
     
     if (texts.length === 1) {
         lengthOut.innerText = `${maxLengthText} chars`;
@@ -528,6 +531,8 @@ function updateOutput() {
         lengthOut.innerText =
             `${texts.length} chunks, longest ${maxLengthText} chars`;
     }
+
+    colorTokenOut.innerText = `${colorTokenText} color tokens`;
     
     chatLimit.classList.toggle('yes', maxLength <= 255);
     cmdBlockLimit.classList.toggle('yes', maxLength <= 32500);
