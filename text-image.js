@@ -268,12 +268,6 @@ function makeEscapedString(output) {
     return output.replace(/"/g, '\\"');
 }
 
-function makeSnbtString(output) {
-    return "'" + output
-        .replace(/\\/g, '\\\\')
-        .replace(/'/g, "\\'") + "'";
-}
-
 function splitIntoChunks(text, maxLength = OUTPUT_CHUNK_SIZE) {
     const chunks = [];
     for (let i = 0; i < text.length; i += maxLength) {
@@ -355,7 +349,7 @@ function renderOutputChunks(texts) {
 
 function jsonToText(json) {
     const minimessageOutput = makeMiniMessageString(json);
-    const rawOutput = JSON.stringify(makeJsonComponent(json));
+    const componentOutput = JSON.stringify(makeJsonComponent(json));
     
     if (outputType.value === 'minimessage') {
         return splitIntoChunks(minimessageOutput);
@@ -366,13 +360,11 @@ function jsonToText(json) {
     }
     
     if (outputType.value === 'json') {
-        return splitIntoChunks(rawOutput);
+        return splitIntoChunks(componentOutput);
     }
     
-    const output = makeSnbtString(rawOutput);
-    
     if (outputType.value === 'snbt') {
-        return splitIntoChunks(output);
+        return splitIntoChunks(componentOutput);
     }
     
     const inputScale = parseFloat(summonScale.value);
@@ -383,7 +375,7 @@ function jsonToText(json) {
     const align = stripSpace.checked ? '"left"' : '"center"';
     // There doesn't seem to be a limit for "line_width", so just use the maximum NBT integer
     const commandPrefix = `summon minecraft:text_display ~ ~ ~ {alignment:${align},transformation:{scale:[${scaleX}f,${scaleY}f,1f],translation:[`;
-    const commandSuffix = `,0f],left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f]},line_width:2147483647,background:0,text:${output}}`;
+    const commandSuffix = `,0f],left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f]},line_width:2147483647,background:0,text:${componentOutput}}`;
     
     let offsets = ['0f,0f'];
     
