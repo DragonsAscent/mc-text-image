@@ -4,8 +4,8 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, user-scalable=yes">
         <title>Minecraft Text Image Generator</title>
-        <link rel="stylesheet" href="style.css?v=13">
-        <script defer src="text-image.js?v=11"></script>
+        <link rel="stylesheet" href="style.css?v=14">
+        <script defer src="text-image.js?v=12"></script>
     </head>
     <body class="no-transition">
         <div class="hero">
@@ -85,6 +85,20 @@
                             How transparent can a pixel be and still show up in the output?
                             <br>
                             Helpful if your input image has soft edges.
+                        </div>
+                    </div>
+                    <div class="setting help-owner">
+                        <label>
+                            Color tolerance:
+                            <span class="range-control">
+                                <input id="color-tolerance" type="range" min="0" value="100" max="100">
+                                <span id="color-tolerance-value" class="range-value">100%</span>
+                            </span>
+                        </label>
+                        <div class="help-tooltip">
+                            Higher values preserve more of the original image's color diversity.
+                            <br>
+                            Lower values merge nearby colors and can make the output shorter.
                         </div>
                     </div>
                     <div class="setting help-owner">

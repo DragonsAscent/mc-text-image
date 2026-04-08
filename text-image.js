@@ -5,6 +5,8 @@ const keepRatio = document.getElementById('keep-ratio');
 const pixelShape = document.getElementById('pixel-shape');
 const smoothing = document.getElementById('smoothing');
 const transpCutoff = document.getElementById('transparency-cutoff');
+const colorTolerance = document.getElementById('color-tolerance');
+const colorToleranceValue = document.getElementById('color-tolerance-value');
 const stripSpace = document.getElementById('strip-space');
 const outputType = document.getElementById('output-type');
 const summonScale = document.getElementById('summon-scale');
@@ -142,6 +144,10 @@ keepRatio.addEventListener('change', () => {
 }
 
 summonScale.addEventListener('input', updateOutput);
+colorTolerance.addEventListener('input', () => {
+    colorToleranceValue.innerText = colorTolerance.value + '%';
+    updateOutput();
+});
 
 for (const el of [
     widthIn, heightIn, pixelShape, smoothing,
@@ -224,6 +230,15 @@ function hexNibble(value) {
     return value.toString(16).padStart(2, '0');
 }
 
+function quantizeChannel(value, step) {
+    return Math.max(0, Math.min(255, Math.round(value / step) * step));
+}
+
+function getColorToleranceStep() {
+    const tolerance = parseInt(colorTolerance.value) || 0;
+    return 1 + Math.round((100 - tolerance) * 0.31);
+}
+
 function makeHexColor(pixels, offset, cutoff) {
     const a = pixels[offset + 3];
     if (a < cutoff) {
@@ -233,9 +248,13 @@ function makeHexColor(pixels, offset, cutoff) {
     } else {
         // Make fully opaque
         pixels[offset + 3] = 255;
-        const r = pixels[offset + 0];
-        const g = pixels[offset + 1];
-        const b = pixels[offset + 2];
+        const quantizeStep = getColorToleranceStep();
+        const r = quantizeChannel(pixels[offset + 0], quantizeStep);
+        const g = quantizeChannel(pixels[offset + 1], quantizeStep);
+        const b = quantizeChannel(pixels[offset + 2], quantizeStep);
+        pixels[offset + 0] = r;
+        pixels[offset + 1] = g;
+        pixels[offset + 2] = b;
         return '#' + hexNibble(r) + hexNibble(g) + hexNibble(b);
     }
 }

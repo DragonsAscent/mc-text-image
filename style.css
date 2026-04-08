@@ -235,6 +235,23 @@ input[type="range"] {
     transform: translateY(2px);
 }
 
+.range-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.range-control input[type="range"] {
+    width: min(14rem, 34vw);
+}
+
+.range-value {
+    min-width: 3.5rem;
+    text-align: right;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+}
+
 textarea {
     width: 100%;
     min-height: 12rem;
