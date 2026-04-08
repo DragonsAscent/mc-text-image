@@ -177,6 +177,7 @@ const SPACE_CHAR = '\u2007';
 const TRAILING_SPACE = new RegExp(SPACE_CHAR + '+$');
 
 const FONT_RATIO = 1.8;
+const OUTPUT_CHUNK_SIZE = 4000;
 
 function parseSize(text) {
     const parsed = parseInt(text);
@@ -260,26 +261,34 @@ function makeSnbtString(output) {
         .replace(/'/g, "\\'") + "'";
 }
 
+function splitIntoChunks(text, maxLength = OUTPUT_CHUNK_SIZE) {
+    const chunks = [];
+    for (let i = 0; i < text.length; i += maxLength) {
+        chunks.push(text.slice(i, i + maxLength));
+    }
+    return chunks.length ? chunks : [''];
+}
+
 function jsonToText(json) {
     const minimessageOutput = makeMiniMessageString(json);
     const rawOutput = JSON.stringify(json);
     
     if (outputType.value === 'minimessage') {
-        return [minimessageOutput];
+        return splitIntoChunks(minimessageOutput);
     }
     
     if (outputType.value === 'escaped-json') {
-        return [makeEscapedString(minimessageOutput)];
+        return splitIntoChunks(makeEscapedString(minimessageOutput));
     }
     
     if (outputType.value === 'json') {
-        return [rawOutput];
+        return splitIntoChunks(rawOutput);
     }
     
     const output = makeSnbtString(rawOutput);
     
     if (outputType.value === 'snbt') {
-        return [output];
+        return splitIntoChunks(output);
     }
     
     const inputScale = parseFloat(summonScale.value);
