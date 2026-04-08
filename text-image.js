@@ -269,6 +269,21 @@ function splitIntoChunks(text, maxLength = OUTPUT_CHUNK_SIZE) {
     return chunks.length ? chunks : [''];
 }
 
+function formatDisplayedTexts(texts) {
+    if (texts.length <= 1 || outputType.value === 'summon') {
+        return texts.join('\n');
+    }
+    
+    return texts.map((text, index) => {
+        const chunkNum = index + 1;
+        return [
+            `===== CHUNK ${chunkNum}/${texts.length} START =====`,
+            text,
+            `===== CHUNK ${chunkNum}/${texts.length} END =====`,
+        ].join('\n');
+    }).join('\n\n');
+}
+
 function jsonToText(json) {
     const minimessageOutput = makeMiniMessageString(json);
     const rawOutput = JSON.stringify(json);
@@ -426,15 +441,18 @@ function updateOutput() {
     
     if (texts.length === 1) {
         lengthOut.innerText = `${maxLengthText} chars`;
-    } else {
+    } else if (outputType.value === 'summon') {
         lengthOut.innerText =
             `${texts.length} commands, longest ${maxLengthText} chars`;
+    } else {
+        lengthOut.innerText =
+            `${texts.length} chunks, longest ${maxLengthText} chars`;
     }
     
     chatLimit.classList.toggle('yes', maxLength <= 255);
     cmdBlockLimit.classList.toggle('yes', maxLength <= 32500);
     
-    jsonOut.value = texts.join('\n');
+    jsonOut.value = formatDisplayedTexts(texts);
 }
 
 if (imageInput.files.length) {
