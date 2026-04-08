@@ -250,12 +250,42 @@ textarea {
 .chunk-card {
     display: grid;
     gap: 8px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.chunk-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
 }
 
 .chunk-label {
     font-size: 0.92rem;
     font-weight: 600;
     color: var(--muted);
+}
+
+.chunk-copy-button {
+    padding: 6px 12px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: white;
+    background: var(--accent);
+    cursor: pointer;
+    font: inherit;
+}
+
+.chunk-copy-button:hover:enabled {
+    background: var(--accent-hover);
+}
+
+.chunk-copy-button:disabled {
+    opacity: 0.75;
+    cursor: default;
 }
 
 .chunk-card textarea {

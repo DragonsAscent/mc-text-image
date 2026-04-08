@@ -179,7 +179,7 @@ const SPACE_CHAR = '\u2007';
 const TRAILING_SPACE = new RegExp(SPACE_CHAR + '+$');
 
 const FONT_RATIO = 1.8;
-const OUTPUT_CHUNK_SIZE = 4000;
+const OUTPUT_CHUNK_SIZE = 16000;
 
 function parseSize(text) {
     const parsed = parseInt(text);
@@ -276,16 +276,58 @@ function calcOutputRows(text) {
     return Math.min(12, Math.max(4, lineCount + 1));
 }
 
+async function copyChunkText(button, text) {
+    const originalText = button.innerText;
+    button.disabled = true;
+
+    try {
+        if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(text);
+        } else {
+            const tempInput = document.createElement('textarea');
+            tempInput.value = text;
+            tempInput.setAttribute('readonly', '');
+            tempInput.style.position = 'absolute';
+            tempInput.style.left = '-9999px';
+            document.body.append(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            tempInput.remove();
+        }
+
+        button.innerText = 'Copied';
+    } catch (error) {
+        console.error('Failed to copy chunk:', error);
+        button.innerText = 'Copy failed';
+    }
+
+    window.setTimeout(() => {
+        button.innerText = originalText;
+        button.disabled = false;
+    }, 1200);
+}
+
 function renderOutputChunks(texts) {
     jsonOut.replaceChildren();
     
     texts.forEach((text, index) => {
         const chunkWrap = document.createElement('div');
         chunkWrap.className = 'chunk-card';
+
+        const chunkHeader = document.createElement('div');
+        chunkHeader.className = 'chunk-header';
         
         const chunkLabel = document.createElement('div');
         chunkLabel.className = 'chunk-label';
-        chunkLabel.innerText = `Chunk ${index + 1}${texts.length > 1 ? ` of ${texts.length}` : ''}`;
+        chunkLabel.innerText = `Output ${index + 1}${texts.length > 1 ? ` of ${texts.length}` : ''}`;
+
+        const copyButton = document.createElement('button');
+        copyButton.type = 'button';
+        copyButton.className = 'chunk-copy-button';
+        copyButton.innerText = 'Copy';
+        copyButton.addEventListener('click', () => {
+            void copyChunkText(copyButton, text);
+        });
         
         const textarea = document.createElement('textarea');
         textarea.readOnly = true;
@@ -294,7 +336,8 @@ function renderOutputChunks(texts) {
         textarea.spellcheck = false;
         textarea.value = text;
         
-        chunkWrap.append(chunkLabel, textarea);
+        chunkHeader.append(chunkLabel, copyButton);
+        chunkWrap.append(chunkHeader, textarea);
         jsonOut.append(chunkWrap);
     });
 }
