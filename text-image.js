@@ -238,7 +238,9 @@ function makeHexColor(pixels, offset, cutoff) {
 }
 
 function makeEscapedJsonString(output) {
-    return JSON.stringify(output);
+    return output
+        .replace(/\\n/g, '<newline>')
+        .replace(/"/g, '\\"');
 }
 
 function makeSnbtString(output) {

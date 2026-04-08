@@ -4,145 +4,154 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, user-scalable=yes">
         <title>Minecraft Text Image Generator</title>
-        <link rel="stylesheet" href="style.css?v=10">
+        <link rel="stylesheet" href="style.css?v=11">
         <script defer src="text-image.js?v=7"></script>
     </head>
     <body class="no-transition">
-        <div>
+        <div class="hero">
             <h2>Minecraft Text Image Generator</h2>
             <input id="image-input" type="file" accept="image/*">
         </div>
-        <div class="settings">
-            <div class="setting help-owner">
-                <label>Width: <input id="width" type="number" value="100" min="0" step="1"></label>
-                <label>Height: <input id="height" type="number" value="100" min="0" step="1"></label>
-                <div class="help-tooltip">
-                    Leave width/height blank or 0 to use the original image size.
+
+        <div class="workspace-layout">
+            <div class="preview-column">
+                <div id="size-out" class="output info-above"></div>
+                <div class="no-output">
+                    <img class="example-image" src="example.png"
+                        alt="Example screenshot of many variously-sized Susie Deltarunes scattered around a Minecraft village">
+                </div>
+                <div id="canvas-wrapper" class="output">
+                    <div id="canvas-outline"></div>
+                    <canvas id="canvas"></canvas>
                 </div>
             </div>
-            <div class="setting help-owner">
-                <label>
-                    Keep aspect ratio: <input id="keep-ratio" type="checkbox" checked>
-                </label>
-                <div class="help-tooltip">
-                    Avoid stretching the image when rescaling it.
+
+            <div class="controls-column">
+                <div class="settings">
+                    <div class="setting help-owner">
+                        <label>Width: <input id="width" type="number" value="100" min="0" step="1"></label>
+                        <label>Height: <input id="height" type="number" value="100" min="0" step="1"></label>
+                        <div class="help-tooltip">
+                            Leave width/height blank or 0 to use the original image size.
+                        </div>
+                    </div>
+                    <div class="setting help-owner">
+                        <label>
+                            Keep aspect ratio: <input id="keep-ratio" type="checkbox" checked>
+                        </label>
+                        <div class="help-tooltip">
+                            Avoid stretching the image when rescaling it.
+                        </div>
+                    </div>
+                    <div class="setting help-owner">
+                        <label>
+                            Pixel shape:
+                            <select id="pixel-shape">
+                                <option value="square" selected>Square</option>
+                                <option value="font">Minecraft font</option>
+                            </select>
+                        </label>
+                        <div class="help-tooltip">
+                            The symbols in Minecraft's font are 1.8 times taller than they are wide.
+                            <br>
+                            <b>Square</b>
+                            <span class="summon-only-text">scales</span>
+                            <span class="non-summon-only-text">assumes you'll scale</span>
+                            the text display entity's height by 0.55555 to compensate.
+                            <br>
+                            <b>Minecraft font</b> scales the input image's height by 0.55555 to compensate.
+                        </div>
+                    </div>
+                    <div class="setting help-owner">
+                        <label>
+                            Image Scaling:
+                            <select id="smoothing">
+                                <option value="">Pixelated</option>
+                                <option value="low" selected>Smooth, low quality</option>
+                                <option value="medium">Smooth, medium quality</option>
+                                <option value="high">Smooth, high quality</option>
+                            </select>
+                        </label>
+                        <div class="help-tooltip">
+                            Not supported in all browsers.
+                        </div>
+                    </div>
+                    <div class="setting help-owner">
+                        <label>
+                            Transparency cutoff:
+                            <input id="transparency-cutoff" type="range" min="0" value="127" max="256">
+                        </label>
+                        <div class="help-tooltip">
+                            How transparent can a pixel be and still show up in the output?
+                            <br>
+                            Helpful if your input image has soft edges.
+                        </div>
+                    </div>
+                    <div class="setting help-owner">
+                        <label>Strip trailing spaces: <input id="strip-space" type="checkbox" checked></label>
+                        <div class="help-tooltip">
+                            This makes the command shorter, but only works with left-aligned text.
+                        </div>
+                    </div>
+                    <div class="setting help-owner">
+                        <label>
+                            Output:
+                            <select id="output-type">
+                                <option value="json">Raw JSON text</option>
+                                <option value="escaped-json">Escaped JSON string</option>
+                                <option value="snbt">SNBT string</option>
+                                <option value="summon" selected>/&NoBreak;summon command</option>
+                            </select>
+                        </label>
+                        <div class="help-tooltip">
+                            Wraps the JSON output in an escaped string, an SNBT string, or builds a <code>/&NoBreak;summon</code> command.
+                            <br>
+                            <b>Escaped JSON string</b> only escapes <code>"</code> and replaces line breaks with <code>&lt;newline&gt;</code> for direct pasting into <code>Magicspells</code>.
+                        </div>
+                    </div>
+                    <div class="setting help-owner summon-only">
+                        <label>
+                            Display entity scale:
+                            <input id="summon-scale" type="text" value="1.0"
+                                placeholder="1.0" inputmode="decimal"
+                                pattern="^(\d+\.?|\d*\.\d+)$">
+                        </label>
+                        <div class="help-tooltip">
+                            Scales the summoned display entity up or down.
+                        </div>
+                    </div>
+                    <div class="setting help-owner summon-only">
+                        <label>Fill gaps: <input id="fill-gaps" type="checkbox" checked></label>
+                        <div class="help-tooltip">
+                            Summons four display entities instead of one,
+                            with offsets to cover the gaps between characters.
+                            <br>
+                            The offsets are in the display transform, so you can
+                            move the group by teleporting all four entities to
+                            the same location and rotation.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="output info-above help-owner">
+                    <span id="length-out"></span>
+                    <span class="nowrap">
+                        (<span id="chat-limit" class="yes-no">chat</span>,
+                        <span id="cmd-block-limit" class="yes-no">cmd block</span>,
+                        <span class="yes-no yes">function</span>)
+                    </span>
+                    <div class="help-tooltip">
+                        Chat is limited to 256 characters, minus 1 for the slash.
+                        <br>
+                        Command blocks are limited to 32,500 characters.
+                        <br>
+                        Functions have no character limit.
+                    </div>
+                </div>
+                <div class="output">
+                    <textarea id="json-out" readonly rows="4" cols="50"></textarea>
                 </div>
             </div>
-            <div class="setting help-owner">
-                <label>
-                    Pixel shape:
-                    <select id="pixel-shape">
-                        <option value="square" selected>Square</option>
-                        <option value="font">Minecraft font</option>
-                    </select>
-                </label>
-                <div class="help-tooltip">
-                    The symbols in Minecraft's font are 1.8 times taller than they are wide.
-                    <br>
-                    <b>Square</b>
-                    <span class="summon-only-text">scales</span>
-                    <span class="non-summon-only-text">assumes you'll scale</span>
-                    the text display entity's height by 0.55555 to compensate.
-                    <br>
-                    <b>Minecraft font</b> scales the input image's height by 0.55555 to compensate.
-                </div>
-            </div>
-            <div class="setting help-owner">
-                <label>
-                    Image Scaling:
-                    <select id="smoothing">
-                        <option value="">Pixelated</option>
-                        <option value="low" selected>Smooth, low quality</option>
-                        <option value="medium">Smooth, medium quality</option>
-                        <option value="high">Smooth, high quality</option>
-                    </select>
-                </label>
-                <div class="help-tooltip">
-                    Not supported in all browsers.
-                </div>
-            </div>
-            <div class="setting help-owner">
-                <label>
-                    Transparency cutoff:
-                    <input id="transparency-cutoff" type="range" min="0" value="127" max="256">
-                </label>
-                <div class="help-tooltip">
-                    How transparent can a pixel be and still show up in the output?
-                    <br>
-                    Helpful if your input image has soft edges.
-                </div>
-            </div>
-            <div class="setting help-owner">
-                <label>Strip trailing spaces: <input id="strip-space" type="checkbox" checked></label>
-                <div class="help-tooltip">
-                    This makes the command shorter, but only works with left-aligned text.
-                </div>
-            </div>
-            <div class="setting help-owner">
-                <label>
-                    Output:
-                    <select id="output-type">
-                        <option value="json">Raw JSON text</option>
-                        <option value="escaped-json">Escaped JSON string</option>
-                        <option value="snbt">SNBT string</option>
-                        <option value="summon" selected>/&NoBreak;summon command</option>
-                    </select>
-                </label>
-                <div class="help-tooltip">
-                    Wraps the JSON output in an escaped string, an SNBT string, or builds a <code>/&NoBreak;summon</code> command.
-                    <br>
-                    <b>Escaped JSON string</b> can be pasted directly into <code>Magicspells</code>.
-                </div>
-            </div>
-            <div class="setting help-owner summon-only">
-                <label>
-                    Display entity scale:
-                    <input id="summon-scale" type="text" value="1.0"
-                        placeholder="1.0" inputmode="decimal"
-                        pattern="^(\d+\.?|\d*\.\d+)$">
-                </label>
-                <div class="help-tooltip">
-                    Scales the summoned display entity up or down.
-                </div>
-            </div>
-            <div class="setting help-owner summon-only">
-                <label>Fill gaps: <input id="fill-gaps" type="checkbox" checked></label>
-                <div class="help-tooltip">
-                    Summons four display entities instead of one,
-                    with offsets to cover the gaps between characters.
-                    <br>
-                    The offsets are in the display transform, so you can
-                    move the group by teleporting all four entities to
-                    the same location and rotation.
-                </div>
-            </div>
-        </div>
-        <div class="no-output">
-            <img class="example-image" src="example.png"
-                alt="Example screenshot of many variously-sized Susie Deltarunes scattered around a Minecraft village">
-        </div>
-        <div class="output info-above help-owner">
-            <span id="length-out"></span>
-            <span class="nowrap">
-                (<span id="chat-limit" class="yes-no">chat</span>,
-                <span id="cmd-block-limit" class="yes-no">cmd block</span>,
-                <span class="yes-no yes">function</span>)
-            </span>
-            <div class="help-tooltip">
-                Chat is limited to 256 characters, minus 1 for the slash.
-                <br>
-                Command blocks are limited to 32,500 characters.
-                <br>
-                Functions have no character limit.
-            </div>
-        </div>
-        <div class="output">
-            <textarea id="json-out" readonly rows="4" cols="50"></textarea>
-        </div>
-        <div id="size-out" class="output info-above"></div>
-        <div id="canvas-wrapper" class="output">
-            <div id="canvas-outline"></div>
-            <canvas id="canvas"></canvas>
         </div>
         <footer>
             <a href="https://github.com/AjaxGb/mc-text-image">View on GitHub</a>

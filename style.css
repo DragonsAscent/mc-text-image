@@ -44,17 +44,31 @@ div {
 }
 
 body > div {
-    width: min(100%, 52rem);
+    width: min(100%, 88rem);
     margin: 0 auto;
     flex: none;
 }
 
-body > div:first-child {
+.hero {
     padding: 18px 20px 16px;
     border: 1px solid var(--border);
     border-radius: 14px;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent), var(--bg-elevated);
     box-shadow: var(--shadow);
+}
+
+.workspace-layout {
+    display: grid;
+    grid-template-columns: minmax(20rem, 36rem) minmax(24rem, 1fr);
+    gap: 16px;
+    align-items: start;
+}
+
+.preview-column,
+.controls-column {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
 }
 
 h2 {
@@ -82,7 +96,7 @@ h2 {
 
 .settings,
 .info-above {
-    width: min(100%, 52rem);
+    width: 100%;
     max-width: 100%;
 }
 
@@ -312,8 +326,14 @@ body .non-summon-only-text {
     overflow: auto;
 }
 
+#size-out {
+    text-align: left;
+    font-weight: 600;
+}
+
 #canvas {
     display: block;
+    margin: 0 auto;
     max-width: 100%;
     image-rendering: pixelated;
     border: 1px solid var(--border);
@@ -358,6 +378,12 @@ footer {
     backdrop-filter: blur(8px);
 }
 
+@media (max-width: 960px) {
+    .workspace-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
 @media (max-width: 640px) {
     body {
         padding-inline: 10px;
@@ -366,7 +392,7 @@ footer {
     .settings,
     .output,
     .no-output,
-    body > div:first-child {
+    .hero {
         border-radius: 12px;
     }
 
