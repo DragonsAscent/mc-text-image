@@ -1,45 +1,112 @@
+:root {
+    color-scheme: dark;
+    --bg: #1e1e1e;
+    --bg-elevated: #252526;
+    --bg-field: #2d2d30;
+    --border: #3c3c3c;
+    --text: #d4d4d4;
+    --muted: #9da1a6;
+    --accent: #007acc;
+    --accent-hover: #1f8ad2;
+    --success: #89d185;
+    --danger: #f48771;
+    --shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+}
+
 * {
     box-sizing: border-box;
 }
 
+html {
+    background: var(--bg);
+}
+
 body {
+    min-height: 100vh;
+    margin: 0;
+    padding: 24px 16px 72px;
     display: flex;
     flex-direction: column;
+    align-items: center;
+    gap: 14px;
     line-height: 1.6;
-    font-family: Arial, sans-serif;
+    font-family: "Segoe UI", system-ui, sans-serif;
     font-size: 15px;
+    color: var(--text);
+    background:
+        radial-gradient(circle at top, rgba(0, 122, 204, 0.16), transparent 0 28rem),
+        var(--bg);
 }
 
 div {
     display: block;
-    margin: 5px 0;
+    margin: 0;
 }
 
 body > div {
-    margin: 5px auto;
+    width: min(100%, 52rem);
+    margin: 0 auto;
     flex: none;
 }
 
+body > div:first-child {
+    padding: 18px 20px 16px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent), var(--bg-elevated);
+    box-shadow: var(--shadow);
+}
+
 h2 {
+    margin: 0 0 14px;
     text-align: center;
-    margin-top: clamp(0px, calc((100vw - 25rem) / 2), 25px);
+    font-size: clamp(1.65rem, 3vw, 2.15rem);
+    font-weight: 600;
+    letter-spacing: 0.2px;
+}
+
+.settings,
+.output,
+.no-output {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--bg-elevated);
+    box-shadow: var(--shadow);
 }
 
 .settings {
-    display: inline-block;
-    border: 1px solid rgba(0, 0, 0, 50%);
-    padding: 5px 10px;
-    border-radius: 10px;
+    display: grid;
+    gap: 2px;
+    padding: 10px 16px;
 }
 
-.settings, .info-above {
-    width: 25em;
+.settings,
+.info-above {
+    width: min(100%, 52rem);
     max-width: 100%;
 }
 
 .setting {
     margin: 0;
-    padding: 3px 0;
+    padding: 8px 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.setting:last-child {
+    border-bottom: none;
+}
+
+.setting > label {
+    flex: 1 1 14rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-right: 0;
 }
 
 .help-owner {
@@ -49,24 +116,25 @@ h2 {
 .help-tooltip {
     display: none;
     position: absolute;
-    left: 15px;
-    margin-top: 1px;
-    z-index: 1;
-    font-style: italic;
-    font-size: 85%;
-    color: rgba(0, 0, 0, 85%);
+    left: 12px;
+    top: calc(100% + 4px);
+    width: min(28rem, calc(100vw - 3rem));
+    z-index: 10;
+    font-style: normal;
+    font-size: 0.92em;
+    color: var(--text);
     text-align: left;
     text-align: start;
-
-    border: 1px solid rgba(0, 0, 0, 50%);
-    background-color: rgba(255, 255, 255, 95%);
+    border: 1px solid var(--border);
+    background: rgba(37, 37, 38, 0.98);
+    box-shadow: var(--shadow);
     pointer-events: none;
-    padding: 5px 10px;
+    padding: 8px 10px;
     border-radius: 10px;
 }
 
 .setting .help-tooltip {
-    left: -15px;
+    left: 0;
 }
 
 .help-owner:hover .help-tooltip {
@@ -82,19 +150,60 @@ h2 {
 
 code {
     font-style: normal;
+    font-family: Consolas, "Courier New", monospace;
+    color: #ce9178;
 }
 
 label {
-    margin-right: 5px;
     white-space: nowrap;
 }
 
+input,
+select,
+textarea {
+    color: var(--text);
+    background: var(--bg-field);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+input[type="text"],
+input[type="number"],
+select,
+textarea {
+    padding: 7px 10px;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 1px solid var(--accent);
+    border-color: var(--accent);
+}
+
 input:invalid {
-    background-color: rgb(255, 200, 200);
+    background-color: rgba(244, 135, 113, 0.18);
+    border-color: rgba(244, 135, 113, 0.7);
 }
 
 input[type="file"] {
     width: 100%;
+    padding: 10px 12px;
+    border-style: dashed;
+}
+
+input[type="file"]::file-selector-button {
+    margin-right: 12px;
+    padding: 7px 12px;
+    border: none;
+    border-radius: 6px;
+    background: var(--accent);
+    color: white;
+    cursor: pointer;
+}
+
+input[type="file"]::file-selector-button:hover {
+    background: var(--accent-hover);
 }
 
 input[type="text"],
@@ -102,9 +211,21 @@ input[type="number"] {
     width: 6em;
 }
 
+input[type="checkbox"],
+input[type="range"] {
+    accent-color: var(--accent);
+}
+
 input[type="range"] {
     height: 10px;
     transform: translateY(2px);
+}
+
+textarea {
+    width: 100%;
+    min-height: 12rem;
+    resize: vertical;
+    font-family: Consolas, "Courier New", monospace;
 }
 
 .summon-only {
@@ -112,7 +233,7 @@ input[type="range"] {
     padding: 0;
     opacity: 0;
     overflow: hidden;
-    transition: max-height 0.1s, padding 0.1s, opacity 0.1s;
+    transition: max-height 0.15s ease, padding 0.15s ease, opacity 0.15s ease;
 }
 
 .no-transition .summon-only {
@@ -120,9 +241,8 @@ input[type="range"] {
 }
 
 .output-type-summon .summon-only {
-    max-height: 2em;
-    padding: 3px 0;
-    padding-left: 20px;
+    max-height: 3em;
+    padding: 8px 0 4px 20px;
     opacity: 1;
     overflow: unset;
 }
@@ -144,16 +264,25 @@ body .non-summon-only-text {
     display: inline;
 }
 
+.no-output,
+.output {
+    padding: 14px;
+}
+
 .example-image {
-    margin-top: 10px;
+    display: block;
+    margin: 0 auto;
     border-radius: 10px;
     width: 50em;
     max-width: 100%;
+    border: 1px solid var(--border);
 }
 
 .info-above {
     margin-bottom: 0;
+    padding: 10px 14px;
     text-align: center;
+    color: var(--muted);
 }
 
 .nowrap {
@@ -165,14 +294,13 @@ body .non-summon-only-text {
     width: 1em;
     text-align: center;
     margin-inline-end: 0.2em;
-    
-    content: "❌︎";
-    color: #f20f0f;
+    content: "✖";
+    color: var(--danger);
 }
 
 .yes-no.yes::before {
-    content: "✔︎";
-    color: #00ac00;
+    content: "✔";
+    color: var(--success);
 }
 
 #json-out {
@@ -181,32 +309,69 @@ body .non-summon-only-text {
 
 #canvas-wrapper {
     position: relative;
+    overflow: auto;
 }
 
 #canvas {
     display: block;
+    max-width: 100%;
     image-rendering: pixelated;
-    border: 1px solid black;
-    background-image: linear-gradient(45deg, #808080 25%, transparent 25%), linear-gradient(-45deg, #808080 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #808080 75%), linear-gradient(-45deg, transparent 75%, #808080 75%), linear-gradient(0deg, white 0%, white 100%);
+    border: 1px solid var(--border);
+    background-image:
+        linear-gradient(45deg, #3a3d41 25%, transparent 25%),
+        linear-gradient(-45deg, #3a3d41 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #3a3d41 75%),
+        linear-gradient(-45deg, transparent 75%, #3a3d41 75%),
+        linear-gradient(0deg, #1f1f1f 0%, #1f1f1f 100%);
     background-size: 10px 10px;
-    background-position: 0 0, 0 5px, 5px -5px, -5px 0px;
+    background-position: 0 0, 0 5px, 5px -5px, -5px 0;
+    border-radius: 8px;
 }
 
 #canvas-outline {
     position: absolute;
     box-sizing: content-box;
-    border: 1px solid red;
+    border: 1px solid rgba(244, 135, 113, 0.9);
     z-index: -1;
     margin: 0;
     top: 0;
     left: 0;
 }
 
+a {
+    color: #4fc1ff;
+}
+
+a:hover {
+    color: #79d4ff;
+}
+
 footer {
     position: fixed;
     bottom: 0;
     left: 0;
-    padding: 5px 10px;
-    border-top-right-radius: 10px;
-    background: white;
+    padding: 8px 12px;
+    border-top: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    border-top-right-radius: 12px;
+    background: rgba(37, 37, 38, 0.96);
+    backdrop-filter: blur(8px);
 }
+
+@media (max-width: 640px) {
+    body {
+        padding-inline: 10px;
+    }
+
+    .settings,
+    .output,
+    .no-output,
+    body > div:first-child {
+        border-radius: 12px;
+    }
+
+    .setting > label {
+        flex-basis: 100%;
+    }
+}
+

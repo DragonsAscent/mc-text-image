@@ -4,8 +4,8 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, user-scalable=yes">
         <title>Minecraft Text Image Generator</title>
-        <link rel="stylesheet" href="style.css?v=9">
-        <script defer src="text-image.js?v=6"></script>
+        <link rel="stylesheet" href="style.css?v=10">
+        <script defer src="text-image.js?v=7"></script>
     </head>
     <body class="no-transition">
         <div>
@@ -82,13 +82,16 @@
                 <label>
                     Output:
                     <select id="output-type">
-                        <option value="json">JSON text</option>
+                        <option value="json">Raw JSON text</option>
+                        <option value="escaped-json">Escaped JSON string</option>
                         <option value="snbt">SNBT string</option>
                         <option value="summon" selected>/&NoBreak;summon command</option>
                     </select>
                 </label>
                 <div class="help-tooltip">
-                    Wraps the JSON output in an SNBT string or builds a <code>/&NoBreak;summon</code> command.
+                    Wraps the JSON output in an escaped string, an SNBT string, or builds a <code>/&NoBreak;summon</code> command.
+                    <br>
+                    <b>Escaped JSON string</b> can be pasted directly into <code>Magicspells</code>.
                 </div>
             </div>
             <div class="setting help-owner summon-only">

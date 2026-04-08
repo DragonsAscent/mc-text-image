@@ -237,15 +237,28 @@ function makeHexColor(pixels, offset, cutoff) {
     }
 }
 
+function makeEscapedJsonString(output) {
+    return JSON.stringify(output);
+}
+
+function makeSnbtString(output) {
+    return "'" + output
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'") + "'";
+}
+
 function jsonToText(json) {
-    let output = JSON.stringify(json);
+    const rawOutput = JSON.stringify(json);
     
     if (outputType.value === 'json') {
-        return [output];
+        return [rawOutput];
     }
     
-    // Convert to SNBT
-    output = "'" + output.replace(/\\/g, '\\\\') + "'";
+    if (outputType.value === 'escaped-json') {
+        return [makeEscapedJsonString(rawOutput)];
+    }
+    
+    const output = makeSnbtString(rawOutput);
     
     if (outputType.value === 'snbt') {
         return [output];
