@@ -237,10 +237,21 @@ function makeHexColor(pixels, offset, cutoff) {
     }
 }
 
-function makeEscapedJsonString(output) {
-    return output
-        .replace(/\\n/g, '<newline>')
-        .replace(/"/g, '\\"');
+function escapeMiniMessageText(text) {
+    return text
+        .replace(/\\/g, '\\\\')
+        .replace(/</g, '\\<')
+        .replace(/\n/g, '<newline>');
+}
+
+function makeMiniMessageString(json) {
+    return json.map(({text, color}) =>
+        `<${color}>${escapeMiniMessageText(text)}`
+    ).join('');
+}
+
+function makeEscapedString(output) {
+    return output.replace(/"/g, '\\"');
 }
 
 function makeSnbtString(output) {
@@ -250,14 +261,19 @@ function makeSnbtString(output) {
 }
 
 function jsonToText(json) {
+    const minimessageOutput = makeMiniMessageString(json);
     const rawOutput = JSON.stringify(json);
     
-    if (outputType.value === 'json') {
-        return [rawOutput];
+    if (outputType.value === 'minimessage') {
+        return [minimessageOutput];
     }
     
     if (outputType.value === 'escaped-json') {
-        return [makeEscapedJsonString(rawOutput)];
+        return [makeEscapedString(minimessageOutput)];
+    }
+    
+    if (outputType.value === 'json') {
+        return [rawOutput];
     }
     
     const output = makeSnbtString(rawOutput);

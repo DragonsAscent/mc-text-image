@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, user-scalable=yes">
         <title>Minecraft Text Image Generator</title>
         <link rel="stylesheet" href="style.css?v=11">
-        <script defer src="text-image.js?v=7"></script>
+        <script defer src="text-image.js?v=8"></script>
     </head>
     <body class="no-transition">
         <div class="hero">
@@ -97,16 +97,17 @@
                         <label>
                             Output:
                             <select id="output-type">
-                                <option value="json">Raw JSON text</option>
-                                <option value="escaped-json">Escaped JSON string</option>
+                                <option value="minimessage" selected>MiniMessage text</option>
+                                <option value="escaped-json">Escaped MiniMessage string</option>
+                                <option value="json">Vanilla JSON text</option>
                                 <option value="snbt">SNBT string</option>
-                                <option value="summon" selected>/&NoBreak;summon command</option>
+                                <option value="summon">/&NoBreak;summon command</option>
                             </select>
                         </label>
                         <div class="help-tooltip">
-                            Wraps the JSON output in an escaped string, an SNBT string, or builds a <code>/&NoBreak;summon</code> command.
+                            MiniMessage is now the default output format.
                             <br>
-                            <b>Escaped JSON string</b> only escapes <code>"</code> and replaces line breaks with <code>&lt;newline&gt;</code> for direct pasting into <code>Magicspells</code>.
+                            <b>Escaped MiniMessage string</b> is meant for direct pasting into <code>Magicspells</code> and only escapes <code>"</code> while keeping line breaks as <code>&lt;newline&gt;</code>.
                         </div>
                     </div>
                     <div class="setting help-owner summon-only">
