@@ -7,6 +7,8 @@ const smoothing = document.getElementById('smoothing');
 const transpCutoff = document.getElementById('transparency-cutoff');
 const colorTolerance = document.getElementById('color-tolerance');
 const colorToleranceValue = document.getElementById('color-tolerance-value');
+const colorMerge = document.getElementById('color-merge');
+const colorMergeValue = document.getElementById('color-merge-value');
 const stripSpace = document.getElementById('strip-space');
 const outputType = document.getElementById('output-type');
 const summonScale = document.getElementById('summon-scale');
@@ -20,6 +22,7 @@ const jsonOut = document.getElementById('json-out');
 const sizeOut = document.getElementById('size-out');
 const canvas = document.getElementById('canvas');
 const canvasOutline = document.getElementById('canvas-outline');
+const originalPreview = document.getElementById('original-preview');
 
 const flagsEl = document.body;
 
@@ -36,7 +39,9 @@ const imageLoader = new Image();
 function loadImage(imageFile) {
     const prevSrc = imageLoader.src;
     flagsEl.classList.remove('image-loaded');
-    imageLoader.src = URL.createObjectURL(imageFile);
+    const nextSrc = URL.createObjectURL(imageFile);
+    imageLoader.src = nextSrc;
+    originalPreview.src = nextSrc;
     if (prevSrc) {
         URL.revokeObjectURL(prevSrc);
     }
@@ -131,6 +136,10 @@ keepRatio.addEventListener('change', () => {
 }
 
 {
+    if (![...outputType.options].some(option => option.value === outputType.value)) {
+        outputType.value = 'minimessage';
+    }
+
     let currOutputTypeFlag = 'output-type-' + outputType.value;
     flagsEl.classList.add(currOutputTypeFlag);
     // Do not play animation when page loads
@@ -147,6 +156,10 @@ keepRatio.addEventListener('change', () => {
 summonScale.addEventListener('input', updateOutput);
 colorTolerance.addEventListener('input', () => {
     colorToleranceValue.innerText = colorTolerance.value + '%';
+    updateOutput();
+});
+colorMerge.addEventListener('input', () => {
+    colorMergeValue.innerText = colorMerge.value + '%';
     updateOutput();
 });
 
@@ -186,7 +199,7 @@ const SPACE_CHAR = '\u2007';
 const TRAILING_SPACE = new RegExp(SPACE_CHAR + '+$');
 
 const FONT_RATIO = 1.8;
-const OUTPUT_CHUNK_SIZE = 16000;
+const OUTPUT_CHUNK_SIZE = 2800;
 
 function parseSize(text) {
     const parsed = parseInt(text);
@@ -240,6 +253,50 @@ function getColorToleranceStep() {
     return 1 + Math.round((100 - tolerance) * 0.31);
 }
 
+function getColorMergeThreshold() {
+    const mergeValue = parseInt(colorMerge.value) || 0;
+    return Math.round(mergeValue * 1.6);
+}
+
+function rgbToHex({r, g, b}) {
+    return '#' + hexNibble(r) + hexNibble(g) + hexNibble(b);
+}
+
+function parseHexColor(color) {
+    return {
+        r: parseInt(color.slice(1, 3), 16),
+        g: parseInt(color.slice(3, 5), 16),
+        b: parseInt(color.slice(5, 7), 16),
+    };
+}
+
+function setPixelColor(pixels, offset, color) {
+    pixels[offset + 0] = color.r;
+    pixels[offset + 1] = color.g;
+    pixels[offset + 2] = color.b;
+    pixels[offset + 3] = 255;
+}
+
+function chooseMergedColor(currentColorHex, nextColorHex) {
+    if (!currentColorHex || !nextColorHex || currentColorHex === nextColorHex) {
+        return nextColorHex;
+    }
+
+    const threshold = getColorMergeThreshold();
+    if (threshold <= 0) {
+        return nextColorHex;
+    }
+
+    const currentColor = parseHexColor(currentColorHex);
+    const nextColor = parseHexColor(nextColorHex);
+    const diffR = currentColor.r - nextColor.r;
+    const diffG = currentColor.g - nextColor.g;
+    const diffB = currentColor.b - nextColor.b;
+    const distance = Math.sqrt(diffR * diffR + diffG * diffG + diffB * diffB);
+
+    return distance <= threshold ? currentColorHex : nextColorHex;
+}
+
 function makeHexColor(pixels, offset, cutoff) {
     const a = pixels[offset + 3];
     if (a < cutoff) {
@@ -253,10 +310,9 @@ function makeHexColor(pixels, offset, cutoff) {
         const r = quantizeChannel(pixels[offset + 0], quantizeStep);
         const g = quantizeChannel(pixels[offset + 1], quantizeStep);
         const b = quantizeChannel(pixels[offset + 2], quantizeStep);
-        pixels[offset + 0] = r;
-        pixels[offset + 1] = g;
-        pixels[offset + 2] = b;
-        return '#' + hexNibble(r) + hexNibble(g) + hexNibble(b);
+        const color = {r, g, b};
+        setPixelColor(pixels, offset, color);
+        return rgbToHex(color);
     }
 }
 
@@ -273,6 +329,59 @@ function makeMiniMessageString(json) {
     ).join('');
 }
 
+function tokenizeMiniMessageText(text) {
+    return escapeMiniMessageText(text).match(/\\.|<newline>|[\s\S]/g) || [];
+}
+
+function splitMiniMessageChunks(json, maxLength = OUTPUT_CHUNK_SIZE) {
+    const chunks = [];
+    let currentChunk = '';
+
+    function pushChunk() {
+        if (currentChunk) {
+            chunks.push(currentChunk);
+            currentChunk = '';
+        }
+    }
+
+    for (const {text, color} of json) {
+        const colorTag = `<${color}>`;
+        const tokens = tokenizeMiniMessageText(text);
+
+        if (colorTag.length >= maxLength) {
+            continue;
+        }
+
+        let tokenIndex = 0;
+        while (tokenIndex < tokens.length) {
+            if (!currentChunk) {
+                currentChunk = colorTag;
+            } else if (currentChunk.length + colorTag.length > maxLength) {
+                pushChunk();
+                currentChunk = colorTag;
+            } else {
+                currentChunk += colorTag;
+            }
+
+            while (tokenIndex < tokens.length) {
+                const nextToken = tokens[tokenIndex];
+                if (currentChunk.length + nextToken.length > maxLength) {
+                    break;
+                }
+                currentChunk += nextToken;
+                tokenIndex += 1;
+            }
+
+            if (tokenIndex < tokens.length) {
+                pushChunk();
+            }
+        }
+    }
+
+    pushChunk();
+    return chunks.length ? chunks : [''];
+}
+
 function makeJsonComponent(json) {
     if (!json.length) {
         return {text: ''};
@@ -282,10 +391,6 @@ function makeJsonComponent(json) {
         text: '',
         extra: json,
     };
-}
-
-function makeEscapedString(output) {
-    return output.replace(/"/g, '\\"');
 }
 
 function splitIntoChunks(text, maxLength = OUTPUT_CHUNK_SIZE) {
@@ -368,15 +473,10 @@ function renderOutputChunks(texts) {
 }
 
 function jsonToText(json) {
-    const minimessageOutput = makeMiniMessageString(json);
     const componentOutput = JSON.stringify(makeJsonComponent(json));
     
     if (outputType.value === 'minimessage') {
-        return splitIntoChunks(minimessageOutput);
-    }
-    
-    if (outputType.value === 'escaped-json') {
-        return splitIntoChunks(makeEscapedString(minimessageOutput));
+        return splitMiniMessageChunks(json);
     }
     
     if (outputType.value === 'json') {
@@ -490,7 +590,11 @@ function updateOutput() {
             currText += '\n';
             x = 0;
         }
-        const newColor = makeHexColor(pixels, i, cutoff);
+        const rawColor = makeHexColor(pixels, i, cutoff);
+        const newColor = chooseMergedColor(currColor, rawColor);
+        if (rawColor && newColor) {
+            setPixelColor(pixels, i, parseHexColor(newColor));
+        }
         if (currColor && newColor && currColor != newColor) {
             json.push({text: currText, color: currColor});
             currText = '';

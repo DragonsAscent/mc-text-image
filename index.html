@@ -4,8 +4,8 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, user-scalable=yes">
         <title>Minecraft Text Image Generator</title>
-        <link rel="stylesheet" href="style.css?v=14">
-        <script defer src="text-image.js?v=13"></script>
+        <link rel="stylesheet" href="style.css?v=15">
+        <script defer src="text-image.js?v=15"></script>
     </head>
     <body class="no-transition">
         <div class="hero">
@@ -20,7 +20,12 @@
                     <img class="example-image" src="example.png"
                         alt="Example screenshot of many variously-sized Susie Deltarunes scattered around a Minecraft village">
                 </div>
-                <div id="canvas-wrapper" class="output">
+                <div id="original-wrapper" class="output preview-card">
+                    <div class="preview-title">Original image</div>
+                    <img id="original-preview" class="preview-image" alt="Original uploaded image">
+                </div>
+                <div id="canvas-wrapper" class="output preview-card">
+                    <div class="preview-title">Processed preview</div>
                     <div id="canvas-outline"></div>
                     <canvas id="canvas"></canvas>
                 </div>
@@ -102,6 +107,20 @@
                         </div>
                     </div>
                     <div class="setting help-owner">
+                        <label>
+                            Color merge:
+                            <span class="range-control">
+                                <input id="color-merge" type="range" min="0" value="0" max="100">
+                                <span id="color-merge-value" class="range-value">0%</span>
+                            </span>
+                        </label>
+                        <div class="help-tooltip">
+                            Merges adjacent similar colors after color tolerance is applied.
+                            <br>
+                            Higher values compress the output more and can reduce NBT depth errors.
+                        </div>
+                    </div>
+                    <div class="setting help-owner">
                         <label>Strip trailing spaces: <input id="strip-space" type="checkbox" checked></label>
                         <div class="help-tooltip">
                             This makes the command shorter, but only works with left-aligned text.
@@ -112,7 +131,6 @@
                             Output:
                             <select id="output-type">
                                 <option value="minimessage" selected>MiniMessage text</option>
-                                <option value="escaped-json">Escaped MiniMessage string</option>
                                 <option value="json">Vanilla JSON text</option>
                                 <option value="snbt">SNBT string</option>
                                 <option value="summon">/&NoBreak;summon command</option>
@@ -121,9 +139,7 @@
                         <div class="help-tooltip">
                             MiniMessage is now the default output format.
                             <br>
-                            Outputs are automatically split into 16,000-character chunks to help avoid Minecraft character limits.
-                            <br>
-                            <b>Escaped MiniMessage string</b> is meant for direct pasting into <code>Magicspells</code> and only escapes <code>"</code> while keeping line breaks as <code>&lt;newline&gt;</code>.
+                            Outputs are automatically split into about 2,800-character chunks to help avoid Minecraft character limits.
                         </div>
                     </div>
                     <div class="setting help-owner summon-only">
