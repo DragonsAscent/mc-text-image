@@ -79,6 +79,15 @@ h2 {
     letter-spacing: 0.2px;
 }
 
+.version-tag {
+    margin: -8px 0 14px;
+    text-align: center;
+    font-size: 0.78rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
 .settings,
 .output,
 .no-output {
