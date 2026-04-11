@@ -206,6 +206,7 @@ const SPACE_CHAR = '\u2007';
 const TRAILING_SPACE = new RegExp(SPACE_CHAR + '+$');
 
 const FONT_RATIO = 1.8;
+const OUTPUT_CHUNK_SIZE = 10000;
 
 function parseSize(text) {
     const parsed = parseInt(text);
@@ -335,6 +336,63 @@ function makeMiniMessageString(json) {
     ).join('');
 }
 
+function tokenizeMiniMessageText(text) {
+    return escapeMiniMessageText(text).match(/\\.|<newline>|[\s\S]/g) || [];
+}
+
+function splitMiniMessageChunks(json, maxLength = OUTPUT_CHUNK_SIZE) {
+    const chunks = [];
+    let currentChunk = '';
+    const colorCloseTag = '</color>';
+
+    function pushChunk() {
+        if (currentChunk) {
+            chunks.push(currentChunk);
+            currentChunk = '';
+        }
+    }
+
+    for (const {text, color} of json) {
+        const colorTag = `<color:${color}>`;
+        const tokens = tokenizeMiniMessageText(text);
+        const reservedLength = colorTag.length + colorCloseTag.length;
+
+        if (reservedLength >= maxLength) {
+            continue;
+        }
+
+        let tokenIndex = 0;
+        while (tokenIndex < tokens.length) {
+            if (!currentChunk) {
+                currentChunk = colorTag;
+            } else if (currentChunk.length + reservedLength > maxLength) {
+                pushChunk();
+                currentChunk = colorTag;
+            } else {
+                currentChunk += colorTag;
+            }
+
+            while (tokenIndex < tokens.length) {
+                const nextToken = tokens[tokenIndex];
+                if (currentChunk.length + nextToken.length + colorCloseTag.length > maxLength) {
+                    break;
+                }
+                currentChunk += nextToken;
+                tokenIndex += 1;
+            }
+
+            currentChunk += colorCloseTag;
+
+            if (tokenIndex < tokens.length) {
+                pushChunk();
+            }
+        }
+    }
+
+    pushChunk();
+    return chunks.length ? chunks : [''];
+}
+
 function makeJsonComponent(json) {
     if (!json.length) {
         return {text: ''};
@@ -344,6 +402,14 @@ function makeJsonComponent(json) {
         text: '',
         extra: json,
     };
+}
+
+function splitIntoChunks(text, maxLength = OUTPUT_CHUNK_SIZE) {
+    const chunks = [];
+    for (let i = 0; i < text.length; i += maxLength) {
+        chunks.push(text.slice(i, i + maxLength));
+    }
+    return chunks.length ? chunks : [''];
 }
 
 function calcOutputRows(text) {
@@ -382,49 +448,57 @@ async function copyOutputText(button, text) {
     }, 1200);
 }
 
-function renderOutput(text) {
+function renderOutputChunks(texts) {
     jsonOut.replaceChildren();
 
-    const outputHeader = document.createElement('div');
-    outputHeader.className = 'output-toolbar';
+    texts.forEach((text, index) => {
+        const outputWrap = document.createElement('div');
+        outputWrap.className = 'output-chunk-card';
 
-    const outputLabel = document.createElement('div');
-    outputLabel.className = 'output-label';
-    outputLabel.innerText = 'Output';
+        const outputHeader = document.createElement('div');
+        outputHeader.className = 'output-toolbar';
 
-    const copyButton = document.createElement('button');
-    copyButton.type = 'button';
-    copyButton.className = 'output-copy-button';
-    copyButton.innerText = 'Copy';
-    copyButton.addEventListener('click', () => {
-        void copyOutputText(copyButton, text);
+        const outputLabel = document.createElement('div');
+        outputLabel.className = 'output-label';
+        outputLabel.innerText = `Output ${index + 1}${texts.length > 1 ? ` of ${texts.length}` : ''}`;
+
+        const copyButton = document.createElement('button');
+        copyButton.type = 'button';
+        copyButton.className = 'output-copy-button';
+        copyButton.innerText = 'Copy';
+        copyButton.addEventListener('click', () => {
+            void copyOutputText(copyButton, text);
+        });
+
+        const textarea = document.createElement('textarea');
+        textarea.readOnly = true;
+        textarea.rows = calcOutputRows(text);
+        textarea.cols = 50;
+        textarea.spellcheck = false;
+        textarea.value = text;
+
+        outputHeader.append(outputLabel, copyButton);
+        outputWrap.append(outputHeader, textarea);
+        jsonOut.append(outputWrap);
     });
-
-    const textarea = document.createElement('textarea');
-    textarea.readOnly = true;
-    textarea.rows = calcOutputRows(text);
-    textarea.cols = 50;
-    textarea.spellcheck = false;
-    textarea.value = text;
-
-    outputHeader.append(outputLabel, copyButton);
-    jsonOut.append(outputHeader, textarea);
 }
 
 function jsonToText(json) {
     const componentOutput = JSON.stringify(makeJsonComponent(json));
 
     if (outputType.value === 'minimessage') {
-        const text = makeMiniMessageString(json);
-        return {text, outputCount: 1, maxSegmentLength: text.length};
+        const texts = splitMiniMessageChunks(json);
+        return {texts, outputCount: texts.length, maxSegmentLength: Math.max(...texts.map(text => text.length))};
     }
 
     if (outputType.value === 'json') {
-        return {text: componentOutput, outputCount: 1, maxSegmentLength: componentOutput.length};
+        const texts = splitIntoChunks(componentOutput);
+        return {texts, outputCount: texts.length, maxSegmentLength: Math.max(...texts.map(text => text.length))};
     }
 
     if (outputType.value === 'snbt') {
-        return {text: componentOutput, outputCount: 1, maxSegmentLength: componentOutput.length};
+        const texts = splitIntoChunks(componentOutput);
+        return {texts, outputCount: texts.length, maxSegmentLength: Math.max(...texts.map(text => text.length))};
     }
 
     const inputScale = parseFloat(summonScale.value);
@@ -452,7 +526,7 @@ function jsonToText(json) {
 
     const commands = offsets.map(offset => commandPrefix + offset + commandSuffix);
     return {
-        text: commands.join('\n'),
+        texts: commands,
         outputCount: commands.length,
         maxSegmentLength: Math.max(...commands.map(command => command.length)),
     };
@@ -564,15 +638,19 @@ function updateOutput() {
     const output = jsonToText(json);
     const colorTokenCount = json.length;
 
-    const totalLengthText = output.text.length.toLocaleString();
+    const totalLength = output.texts.reduce((sum, text) => sum + text.length, 0);
+    const totalLengthText = totalLength.toLocaleString();
     const maxLengthText = output.maxSegmentLength.toLocaleString();
     const colorTokenText = colorTokenCount.toLocaleString();
 
-    if (outputType.value === 'summon' && output.outputCount > 1) {
+    if (output.outputCount === 1) {
+        lengthOut.innerText = `${maxLengthText} chars`;
+    } else if (outputType.value === 'summon') {
         lengthOut.innerText =
             `${output.outputCount} commands, ${totalLengthText} chars total, longest ${maxLengthText} chars`;
     } else {
-        lengthOut.innerText = `${totalLengthText} chars`;
+        lengthOut.innerText =
+            `${output.outputCount} chunks, ${totalLengthText} chars total, longest ${maxLengthText} chars`;
     }
 
     colorTokenOut.innerText = `${colorTokenText} color tokens`;
@@ -580,7 +658,7 @@ function updateOutput() {
     chatLimit.classList.toggle('yes', output.maxSegmentLength <= 255);
     cmdBlockLimit.classList.toggle('yes', output.maxSegmentLength <= 32500);
 
-    renderOutput(output.text);
+    renderOutputChunks(output.texts);
 }
 
 if (imageInput.files.length) {
