@@ -325,7 +325,7 @@ function escapeMiniMessageText(text) {
 
 function makeMiniMessageString(json) {
     return json.map(({text, color}) =>
-        `<${color}>${escapeMiniMessageText(text)}`
+        `<${color}>${escapeMiniMessageText(text)}</color>`
     ).join('');
 }
 
@@ -336,6 +336,7 @@ function tokenizeMiniMessageText(text) {
 function splitMiniMessageChunks(json, maxLength = OUTPUT_CHUNK_SIZE) {
     const chunks = [];
     let currentChunk = '';
+    const colorCloseTag = '</color>';
 
     function pushChunk() {
         if (currentChunk) {
@@ -347,8 +348,9 @@ function splitMiniMessageChunks(json, maxLength = OUTPUT_CHUNK_SIZE) {
     for (const {text, color} of json) {
         const colorTag = `<${color}>`;
         const tokens = tokenizeMiniMessageText(text);
+        const reservedLength = colorTag.length + colorCloseTag.length;
 
-        if (colorTag.length >= maxLength) {
+        if (reservedLength >= maxLength) {
             continue;
         }
 
@@ -356,7 +358,7 @@ function splitMiniMessageChunks(json, maxLength = OUTPUT_CHUNK_SIZE) {
         while (tokenIndex < tokens.length) {
             if (!currentChunk) {
                 currentChunk = colorTag;
-            } else if (currentChunk.length + colorTag.length > maxLength) {
+            } else if (currentChunk.length + reservedLength > maxLength) {
                 pushChunk();
                 currentChunk = colorTag;
             } else {
@@ -365,12 +367,14 @@ function splitMiniMessageChunks(json, maxLength = OUTPUT_CHUNK_SIZE) {
 
             while (tokenIndex < tokens.length) {
                 const nextToken = tokens[tokenIndex];
-                if (currentChunk.length + nextToken.length > maxLength) {
+                if (currentChunk.length + nextToken.length + colorCloseTag.length > maxLength) {
                     break;
                 }
                 currentChunk += nextToken;
                 tokenIndex += 1;
             }
+
+            currentChunk += colorCloseTag;
 
             if (tokenIndex < tokens.length) {
                 pushChunk();
