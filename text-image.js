@@ -325,7 +325,7 @@ function escapeMiniMessageText(text) {
 
 function makeMiniMessageString(json) {
     return json.map(({text, color}) =>
-        `<${color}>${escapeMiniMessageText(text)}</color>`
+        `<color:${color}>${escapeMiniMessageText(text)}</color>`
     ).join('');
 }
 
@@ -346,7 +346,7 @@ function splitMiniMessageChunks(json, maxLength = OUTPUT_CHUNK_SIZE) {
     }
 
     for (const {text, color} of json) {
-        const colorTag = `<${color}>`;
+        const colorTag = `<color:${color}>`;
         const tokens = tokenizeMiniMessageText(text);
         const reservedLength = colorTag.length + colorCloseTag.length;
 
