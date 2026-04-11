@@ -23,12 +23,19 @@ const sizeOut = document.getElementById('size-out');
 const canvas = document.getElementById('canvas');
 const canvasOutline = document.getElementById('canvas-outline');
 const originalPreview = document.getElementById('original-preview');
+const versionTag = document.getElementById('version-tag');
 
 const flagsEl = document.body;
 
 const ctx = canvas.getContext('2d');
 
 const imageLoader = new Image();
+
+const APP_VERSION = 'V 2.0.2';
+
+if (versionTag) {
+    versionTag.innerText = APP_VERSION;
+}
 
 
 ///////////////////////// EVENT LISTENERS /////////////////////////
