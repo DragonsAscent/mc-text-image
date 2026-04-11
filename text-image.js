@@ -206,7 +206,6 @@ const SPACE_CHAR = '\u2007';
 const TRAILING_SPACE = new RegExp(SPACE_CHAR + '+$');
 
 const FONT_RATIO = 1.8;
-const OUTPUT_CHUNK_SIZE = 2800;
 
 function parseSize(text) {
     const parsed = parseInt(text);
@@ -336,63 +335,6 @@ function makeMiniMessageString(json) {
     ).join('');
 }
 
-function tokenizeMiniMessageText(text) {
-    return escapeMiniMessageText(text).match(/\\.|<newline>|[\s\S]/g) || [];
-}
-
-function splitMiniMessageChunks(json, maxLength = OUTPUT_CHUNK_SIZE) {
-    const chunks = [];
-    let currentChunk = '';
-    const colorCloseTag = '</color>';
-
-    function pushChunk() {
-        if (currentChunk) {
-            chunks.push(currentChunk);
-            currentChunk = '';
-        }
-    }
-
-    for (const {text, color} of json) {
-        const colorTag = `<color:${color}>`;
-        const tokens = tokenizeMiniMessageText(text);
-        const reservedLength = colorTag.length + colorCloseTag.length;
-
-        if (reservedLength >= maxLength) {
-            continue;
-        }
-
-        let tokenIndex = 0;
-        while (tokenIndex < tokens.length) {
-            if (!currentChunk) {
-                currentChunk = colorTag;
-            } else if (currentChunk.length + reservedLength > maxLength) {
-                pushChunk();
-                currentChunk = colorTag;
-            } else {
-                currentChunk += colorTag;
-            }
-
-            while (tokenIndex < tokens.length) {
-                const nextToken = tokens[tokenIndex];
-                if (currentChunk.length + nextToken.length + colorCloseTag.length > maxLength) {
-                    break;
-                }
-                currentChunk += nextToken;
-                tokenIndex += 1;
-            }
-
-            currentChunk += colorCloseTag;
-
-            if (tokenIndex < tokens.length) {
-                pushChunk();
-            }
-        }
-    }
-
-    pushChunk();
-    return chunks.length ? chunks : [''];
-}
-
 function makeJsonComponent(json) {
     if (!json.length) {
         return {text: ''};
@@ -404,20 +346,12 @@ function makeJsonComponent(json) {
     };
 }
 
-function splitIntoChunks(text, maxLength = OUTPUT_CHUNK_SIZE) {
-    const chunks = [];
-    for (let i = 0; i < text.length; i += maxLength) {
-        chunks.push(text.slice(i, i + maxLength));
-    }
-    return chunks.length ? chunks : [''];
-}
-
 function calcOutputRows(text) {
     const lineCount = text.split('\n').length;
     return Math.min(12, Math.max(4, lineCount + 1));
 }
 
-async function copyChunkText(button, text) {
+async function copyOutputText(button, text) {
     const originalText = button.innerText;
     button.disabled = true;
 
@@ -438,7 +372,7 @@ async function copyChunkText(button, text) {
 
         button.innerText = 'Copied';
     } catch (error) {
-        console.error('Failed to copy chunk:', error);
+        console.error('Failed to copy output:', error);
         button.innerText = 'Copy failed';
     }
 
@@ -448,68 +382,63 @@ async function copyChunkText(button, text) {
     }, 1200);
 }
 
-function renderOutputChunks(texts) {
+function renderOutput(text) {
     jsonOut.replaceChildren();
-    
-    texts.forEach((text, index) => {
-        const chunkWrap = document.createElement('div');
-        chunkWrap.className = 'chunk-card';
 
-        const chunkHeader = document.createElement('div');
-        chunkHeader.className = 'chunk-header';
-        
-        const chunkLabel = document.createElement('div');
-        chunkLabel.className = 'chunk-label';
-        chunkLabel.innerText = `Output ${index + 1}${texts.length > 1 ? ` of ${texts.length}` : ''}`;
+    const outputHeader = document.createElement('div');
+    outputHeader.className = 'output-toolbar';
 
-        const copyButton = document.createElement('button');
-        copyButton.type = 'button';
-        copyButton.className = 'chunk-copy-button';
-        copyButton.innerText = 'Copy';
-        copyButton.addEventListener('click', () => {
-            void copyChunkText(copyButton, text);
-        });
-        
-        const textarea = document.createElement('textarea');
-        textarea.readOnly = true;
-        textarea.rows = calcOutputRows(text);
-        textarea.cols = 50;
-        textarea.spellcheck = false;
-        textarea.value = text;
-        
-        chunkHeader.append(chunkLabel, copyButton);
-        chunkWrap.append(chunkHeader, textarea);
-        jsonOut.append(chunkWrap);
+    const outputLabel = document.createElement('div');
+    outputLabel.className = 'output-label';
+    outputLabel.innerText = 'Output';
+
+    const copyButton = document.createElement('button');
+    copyButton.type = 'button';
+    copyButton.className = 'output-copy-button';
+    copyButton.innerText = 'Copy';
+    copyButton.addEventListener('click', () => {
+        void copyOutputText(copyButton, text);
     });
+
+    const textarea = document.createElement('textarea');
+    textarea.readOnly = true;
+    textarea.rows = calcOutputRows(text);
+    textarea.cols = 50;
+    textarea.spellcheck = false;
+    textarea.value = text;
+
+    outputHeader.append(outputLabel, copyButton);
+    jsonOut.append(outputHeader, textarea);
 }
 
 function jsonToText(json) {
     const componentOutput = JSON.stringify(makeJsonComponent(json));
-    
+
     if (outputType.value === 'minimessage') {
-        return splitMiniMessageChunks(json);
+        const text = makeMiniMessageString(json);
+        return {text, outputCount: 1, maxSegmentLength: text.length};
     }
-    
+
     if (outputType.value === 'json') {
-        return splitIntoChunks(componentOutput);
+        return {text: componentOutput, outputCount: 1, maxSegmentLength: componentOutput.length};
     }
-    
+
     if (outputType.value === 'snbt') {
-        return splitIntoChunks(componentOutput);
+        return {text: componentOutput, outputCount: 1, maxSegmentLength: componentOutput.length};
     }
-    
+
     const inputScale = parseFloat(summonScale.value);
     const scaleX = Number.isFinite(inputScale) ? inputScale : 1.0;
     const adjustRatio = (pixelShape.value === 'font') ? 1.0 : FONT_RATIO;
     const scaleY = scaleX / adjustRatio;
-    
+
     const align = stripSpace.checked ? '"left"' : '"center"';
     // There doesn't seem to be a limit for "line_width", so just use the maximum NBT integer
     const commandPrefix = `summon minecraft:text_display ~ ~ ~ {alignment:${align},transformation:{scale:[${scaleX}f,${scaleY}f,1f],translation:[`;
     const commandSuffix = `,0f],left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f]},line_width:2147483647,background:0,text:${componentOutput}}`;
-    
+
     let offsets = ['0f,0f'];
-    
+
     if (fillGaps.checked) {
         const offsetX = 0.025 * scaleX;
         const offsetY = 0.0756 * scaleY;
@@ -520,8 +449,13 @@ function jsonToText(json) {
             `${offsetX}f,${offsetY}f`,
         ];
     }
-    
-    return offsets.map(offset => commandPrefix + offset + commandSuffix);
+
+    const commands = offsets.map(offset => commandPrefix + offset + commandSuffix);
+    return {
+        text: commands.join('\n'),
+        outputCount: commands.length,
+        maxSegmentLength: Math.max(...commands.map(command => command.length)),
+    };
 }
 
 const prevSafeInputs = {
@@ -627,32 +561,26 @@ function updateOutput() {
     // Apply transparency cutoff to preview
     ctx.putImageData(imageData, 0, 0);
     
-    const texts = jsonToText(json);
+    const output = jsonToText(json);
     const colorTokenCount = json.length;
-    
-    let maxLength = 0;
-    for (const text of texts) {
-        if (text.length > maxLength) maxLength = text.length;
-    }
-    const maxLengthText = maxLength.toLocaleString();
+
+    const totalLengthText = output.text.length.toLocaleString();
+    const maxLengthText = output.maxSegmentLength.toLocaleString();
     const colorTokenText = colorTokenCount.toLocaleString();
-    
-    if (texts.length === 1) {
-        lengthOut.innerText = `${maxLengthText} chars`;
-    } else if (outputType.value === 'summon') {
+
+    if (outputType.value === 'summon' && output.outputCount > 1) {
         lengthOut.innerText =
-            `${texts.length} commands, longest ${maxLengthText} chars`;
+            `${output.outputCount} commands, ${totalLengthText} chars total, longest ${maxLengthText} chars`;
     } else {
-        lengthOut.innerText =
-            `${texts.length} chunks, longest ${maxLengthText} chars`;
+        lengthOut.innerText = `${totalLengthText} chars`;
     }
 
     colorTokenOut.innerText = `${colorTokenText} color tokens`;
-    
-    chatLimit.classList.toggle('yes', maxLength <= 255);
-    cmdBlockLimit.classList.toggle('yes', maxLength <= 32500);
-    
-    renderOutputChunks(texts);
+
+    chatLimit.classList.toggle('yes', output.maxSegmentLength <= 255);
+    cmdBlockLimit.classList.toggle('yes', output.maxSegmentLength <= 32500);
+
+    renderOutput(output.text);
 }
 
 if (imageInput.files.length) {
