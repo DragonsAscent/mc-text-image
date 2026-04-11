@@ -268,8 +268,20 @@ textarea {
     font-family: Consolas, "Courier New", monospace;
 }
 
+.chunk-output {
+    display: grid;
+    gap: 10px;
+}
+
+.output-chunk-card {
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.02);
+}
+
 .output-chunk-card + .output-chunk-card {
-    margin-top: 12px;
+    margin-top: 0;
 }
 
 .output-toolbar {
@@ -287,22 +299,26 @@ textarea {
 }
 
 .output-copy-button {
-    padding: 6px 12px;
-    border: 1px solid transparent;
-    border-radius: 8px;
-    color: white;
-    background: var(--accent);
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    background: transparent;
     cursor: pointer;
     font: inherit;
 }
 
 .output-copy-button:hover:enabled {
-    background: var(--accent-hover);
+    background: rgba(255, 255, 255, 0.06);
 }
 
 .output-copy-button:disabled {
     opacity: 0.75;
     cursor: default;
+}
+
+.output-chunk-card textarea {
+    min-height: 6rem;
 }
 
 .preview-card {
