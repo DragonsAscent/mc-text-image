@@ -206,7 +206,7 @@ const SPACE_CHAR = '\u2007';
 const TRAILING_SPACE = new RegExp(SPACE_CHAR + '+$');
 
 const FONT_RATIO = 1.8;
-const OUTPUT_CHUNK_SIZE = 10000;
+const OUTPUT_CHUNK_SIZE = 8000;
 
 function parseSize(text) {
     const parsed = parseInt(text);
